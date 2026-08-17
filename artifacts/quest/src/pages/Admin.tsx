@@ -184,6 +184,7 @@ function QualityTaskRow({ task, allCodes }: { task: Task; allCodes: QualityCode[
 export default function Admin() {
   const [password, setPassword] = useState(() => localStorage.getItem(ADMIN_STORAGE_KEY) || "");
   const [isLogged, setIsLogged] = useState(() => Boolean(localStorage.getItem(ADMIN_STORAGE_KEY)));
+  const [loggingIn, setLoggingIn] = useState(false);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [durationInput, setDurationInput] = useState("60");
   const queryClient = useQueryClient();
@@ -321,19 +322,33 @@ export default function Admin() {
             <CardDescription className="text-slate-400">Введите пароль администратора</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
-              if (password === "wJbFH0y9xyovutaiqWN8E8") {
+              setLoggingIn(true);
+              try {
+                // The real password lives only on the server (ADMIN_PASSWORD env var) —
+                // we verify by attempting an admin-only request, never by comparing
+                // against a copy baked into the client bundle.
+                const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+                const res = await fetch(`${BASE}/api/completion-log`, {
+                  headers: { Authorization: `Bearer ${password}` },
+                });
+                if (!res.ok) throw new Error();
                 localStorage.setItem(ADMIN_STORAGE_KEY, password);
                 setAuthTokenGetter(() => password);
                 setIsLogged(true);
-              } else {
+              } catch {
                 toast.error("Неверный пароль");
+              } finally {
+                setLoggingIn(false);
               }
             }}>
               <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
                 className="bg-slate-950 border-slate-800 mb-4" placeholder="••••••••" />
-              <Button type="submit" className="w-full">Войти</Button>
+              <Button type="submit" className="w-full" disabled={loggingIn || !password}>
+                {loggingIn ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Войти
+              </Button>
             </form>
           </CardContent>
         </Card>
