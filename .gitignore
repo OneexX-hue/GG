@@ -4,3 +4,4 @@ dist/
 artifacts/api-server/data/
 *.log
 .DS_Store
+.env

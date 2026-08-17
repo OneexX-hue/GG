@@ -323,7 +323,7 @@ export default function Admin() {
           <CardContent>
             <form onSubmit={(e) => {
               e.preventDefault();
-              if (password === "admin123") {
+              if (password === "wJbFH0y9xyovutaiqWN8E8") {
                 localStorage.setItem(ADMIN_STORAGE_KEY, password);
                 setAuthTokenGetter(() => password);
                 setIsLogged(true);
