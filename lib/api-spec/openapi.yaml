@@ -1,0 +1,505 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: tasks
+    description: Quest tasks
+  - name: players
+    description: Quest players
+  - name: gameState
+    description: Game state management
+  - name: qualityCodes
+    description: Quality scoring codes
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /tasks:
+    get:
+      operationId: getTasks
+      tags: [tasks]
+      summary: List all tasks
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+    post:
+      operationId: createTask
+      tags: [tasks]
+      summary: Create a task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "200":
+          description: Created task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{id}:
+    put:
+      operationId: updateTask
+      tags: [tasks]
+      summary: Update a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+    delete:
+      operationId: deleteTask
+      tags: [tasks]
+      summary: Delete a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /players:
+    get:
+      operationId: getPlayers
+      tags: [players]
+      summary: List all players
+      responses:
+        "200":
+          description: List of players
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Player"
+    post:
+      operationId: createPlayer
+      tags: [players]
+      summary: Register a player
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlayerInput"
+      responses:
+        "200":
+          description: Player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+    delete:
+      operationId: resetPlayers
+      tags: [players]
+      summary: Reset all players (admin)
+      responses:
+        "200":
+          description: Reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /players/{clientId}:
+    get:
+      operationId: getPlayer
+      tags: [players]
+      summary: Get a player by clientId
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updatePlayer
+      tags: [players]
+      summary: Update a player
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlayerUpdate"
+      responses:
+        "200":
+          description: Updated player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+
+  /game-state:
+    get:
+      operationId: getGameState
+      tags: [gameState]
+      summary: Get current game state
+      responses:
+        "200":
+          description: Game state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameState"
+    put:
+      operationId: updateGameState
+      tags: [gameState]
+      summary: Update game state (start/pause/resume/stop)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameStateUpdate"
+      responses:
+        "200":
+          description: Updated game state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameState"
+
+  /quality-codes:
+    get:
+      operationId: getQualityCodes
+      tags: [qualityCodes]
+      summary: List all quality codes (admin)
+      responses:
+        "200":
+          description: List of quality codes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QualityCode"
+    post:
+      operationId: generateQualityCode
+      tags: [qualityCodes]
+      summary: Generate a one-time quality code (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateQualityCodeInput"
+      responses:
+        "200":
+          description: Generated code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QualityCode"
+
+  /quality-codes/redeem:
+    post:
+      operationId: redeemQualityCode
+      tags: [qualityCodes]
+      summary: Player redeems a quality code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RedeemQualityCodeInput"
+      responses:
+        "200":
+          description: Redemption result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RedeemQualityCodeResult"
+
+  /quality-codes/{id}:
+    delete:
+      operationId: deleteQualityCode
+      tags: [qualityCodes]
+      summary: Delete a one-time quality code (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    OkResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required: [ok]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        location:
+          type: string
+        correctAnswer:
+          type: string
+        hintText:
+          type: string
+        latitude:
+          type: string
+        longitude:
+          type: string
+        description:
+          type: string
+        points:
+          type: integer
+        qualityEnabled:
+          type: boolean
+        photoEnabled:
+          type: boolean
+      required: [id, title, location, correctAnswer, hintText, latitude, longitude, description, points, qualityEnabled, photoEnabled]
+
+    TaskInput:
+      type: object
+      properties:
+        title:
+          type: string
+        location:
+          type: string
+        correctAnswer:
+          type: string
+        hintText:
+          type: string
+        latitude:
+          type: string
+        longitude:
+          type: string
+        description:
+          type: string
+        points:
+          type: integer
+        qualityEnabled:
+          type: boolean
+        photoEnabled:
+          type: boolean
+      required: [title, correctAnswer]
+
+    PlayerQualityScores:
+      type: object
+      additionalProperties:
+        type: integer
+
+    Player:
+      type: object
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: string
+        name:
+          type: string
+        team:
+          type: string
+        completedTasks:
+          type: array
+          items:
+            type: string
+        qualityScores:
+          $ref: "#/components/schemas/PlayerQualityScores"
+        finished:
+          type: boolean
+        finishTimeSec:
+          type: ["number", "null"]
+      required: [id, clientId, name, team, completedTasks, qualityScores, finished]
+
+    PlayerInput:
+      type: object
+      properties:
+        clientId:
+          type: string
+        name:
+          type: string
+        team:
+          type: string
+        pin:
+          type: string
+          description: 4-digit PIN the player sets at registration, used later to recover their session.
+      required: [clientId, name, pin]
+
+    PlayerUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        team:
+          type: string
+
+    GameState:
+      type: object
+      properties:
+        id:
+          type: integer
+        isGameActive:
+          type: boolean
+        isPaused:
+          type: boolean
+        globalStartTimestamp:
+          type: ["number", "null"]
+        totalElapsedSec:
+          type: number
+        lastPauseTimestamp:
+          type: ["number", "null"]
+      required: [id, isGameActive, isPaused, totalElapsedSec]
+
+    GameStateUpdate:
+      type: object
+      properties:
+        isGameActive:
+          type: boolean
+        isPaused:
+          type: boolean
+        globalStartTimestamp:
+          type: ["number", "null"]
+        totalElapsedSec:
+          type: number
+        lastPauseTimestamp:
+          type: ["number", "null"]
+
+    QualityCode:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        taskId:
+          type: integer
+        qualityPoints:
+          type: integer
+          description: "Quality points: 10 (excellent), 5 (average), 3 (poor)"
+        usedByClientId:
+          type: ["string", "null"]
+        createdAt:
+          type: number
+        isPermanent:
+          type: boolean
+          description: "Permanent codes are reusable by multiple players; one-time codes can only be used once"
+      required: [id, code, taskId, qualityPoints, createdAt, isPermanent]
+
+    GenerateQualityCodeInput:
+      type: object
+      properties:
+        taskId:
+          type: integer
+        qualityPoints:
+          type: integer
+          enum: [3, 5, 10]
+      required: [taskId, qualityPoints]
+
+    RedeemQualityCodeInput:
+      type: object
+      properties:
+        code:
+          type: string
+        clientId:
+          type: string
+      required: [code, clientId]
+
+    RedeemQualityCodeResult:
+      type: object
+      properties:
+        taskId:
+          type: integer
+        qualityPoints:
+          type: integer
+        player:
+          $ref: "#/components/schemas/Player"
+      required: [taskId, qualityPoints, player]
