@@ -28,6 +28,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 import {
   Play, Pause, Square, Plus, Trash2, Edit, Shield, Copy,
   RefreshCw, Star, Award, ChevronDown, ChevronRight, Users, AlertTriangle, Trophy, Clock,
@@ -232,6 +233,7 @@ export default function Admin() {
     refetchInterval: 3000,
   });
   const [reviewingPhotoId, setReviewingPhotoId] = useState<number | null>(null);
+  const [galleryPhoto, setGalleryPhoto] = useState<PhotoSubmission | null>(null);
 
   const completionLogQueryKey = ["completion-log", "admin"];
   const { data: completionLog } = useQuery({
@@ -611,6 +613,74 @@ export default function Admin() {
             </CardContent>
           </Card>
         )}
+
+        {/* ── Photo album — every submitted photo, any status, for browsing/keepsake ── */}
+        {(photoSubmissions ?? []).length > 0 && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Camera className="w-5 h-5 text-primary" />
+                <CardTitle>Фотоальбом квеста</CardTitle>
+                <Badge variant="secondary">{photoSubmissions?.length ?? 0}</Badge>
+              </div>
+              <CardDescription>Все присланные фото — и принятые, и отклонённые, и ожидающие.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {[...(photoSubmissions ?? [])].sort((a, b) => b.createdAt - a.createdAt).map((p) => (
+                  <button key={p.id} onClick={() => setGalleryPhoto(p)}
+                    className="rounded-xl border border-border overflow-hidden bg-background text-left hover:ring-2 hover:ring-primary/40 transition-all">
+                    <div className="relative">
+                      <img src={p.photoDataUrl} alt={p.taskTitle} className="w-full h-32 object-cover" />
+                      <Badge className={cn("absolute top-1.5 right-1.5 text-xs",
+                        p.status === "approved" ? "bg-emerald-500 text-white" :
+                        p.status === "rejected" ? "bg-rose-500 text-white" :
+                        "bg-amber-500 text-white")}>
+                        {p.status === "approved" ? "✅" : p.status === "rejected" ? "❌" : "⏳"}
+                      </Badge>
+                    </div>
+                    <div className="p-2">
+                      <p className="text-xs font-bold text-primary truncate">{p.playerTeam || p.playerName}</p>
+                      <p className="text-xs text-muted-foreground truncate">{p.taskTitle}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── Photo lightbox ── */}
+        <Dialog open={galleryPhoto !== null} onOpenChange={(open) => !open && setGalleryPhoto(null)}>
+          <DialogContent className="max-w-2xl">
+            {galleryPhoto && (
+              <>
+                <DialogHeader>
+                  <DialogTitle>{galleryPhoto.taskTitle}</DialogTitle>
+                </DialogHeader>
+                <img src={galleryPhoto.photoDataUrl} alt={galleryPhoto.taskTitle} className="w-full rounded-lg" />
+                <div className="flex items-center justify-between text-sm">
+                  <div>
+                    <p className="font-bold text-primary">{galleryPhoto.playerTeam || galleryPhoto.playerName}</p>
+                    {galleryPhoto.playerTeam && <p className="text-muted-foreground text-xs">{galleryPhoto.playerName}</p>}
+                  </div>
+                  <div className="text-right">
+                    <Badge className={
+                      galleryPhoto.status === "approved" ? "bg-emerald-500 text-white" :
+                      galleryPhoto.status === "rejected" ? "bg-rose-500 text-white" :
+                      "bg-amber-500 text-white"
+                    }>
+                      {galleryPhoto.status === "approved" ? "Принято" : galleryPhoto.status === "rejected" ? "Отклонено" : "На проверке"}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(galleryPhoto.createdAt).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* ── Quality Codes by Task ── */}
         <Card className="border-primary/30">
