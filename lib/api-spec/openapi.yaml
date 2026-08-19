@@ -375,7 +375,7 @@ components:
           type: boolean
         clueImageDataUrl:
           type: string
-      required: [title, correctAnswer]
+      required: [title]
 
     PlayerQualityScores:
       type: object

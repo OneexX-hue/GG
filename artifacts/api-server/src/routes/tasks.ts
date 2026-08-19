@@ -16,7 +16,8 @@ const MAX_CLUE_IMAGE_LENGTH = 8_000_000; // ~6MB binary as base64 data URL
 const taskSchema = z.object({
   title: z.string(),
   location: z.string().optional().default(""),
-  correctAnswer: z.string(),
+  // Required for code tasks; irrelevant and skippable for photo tasks — see refine below.
+  correctAnswer: z.string().optional().default(""),
   hintText: z.string().optional().default(""),
   points: z.number().int().optional().default(10),
   latitude: z.string().optional().default(""),
@@ -30,7 +31,10 @@ const taskSchema = z.object({
     (v) => v === "" || v.startsWith("data:image/"),
     "Некорректное изображение"
   ).optional().default(""),
-});
+}).refine(
+  (d) => d.photoEnabled || d.correctAnswer.trim().length > 0,
+  { message: "Код ответа обязателен, если это не фото-задание", path: ["correctAnswer"] }
+);
 
 const DEFAULT_TASKS = [
   {

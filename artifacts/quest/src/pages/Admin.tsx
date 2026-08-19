@@ -854,7 +854,7 @@ export default function Admin() {
                   <TableRow key={task.id}>
                     <TableCell className="font-medium">{task.title}</TableCell>
                     <TableCell>{task.location}</TableCell>
-                    <TableCell className="font-mono">{task.correctAnswer}</TableCell>
+                    <TableCell className="font-mono">{task.correctAnswer || "—"}</TableCell>
                     <TableCell className="text-center">{task.points}</TableCell>
                     <TableCell className="text-center">
                       {task.qualityEnabled
@@ -932,10 +932,12 @@ export default function Admin() {
                 <Label>Локация</Label>
                 <Input value={taskForm.location} onChange={(e) => setTaskForm({ ...taskForm, location: e.target.value })} />
               </div>
-              <div className="space-y-2">
-                <Label>Код ответа *</Label>
-                <Input required value={taskForm.correctAnswer} onChange={(e) => setTaskForm({ ...taskForm, correctAnswer: e.target.value })} />
-              </div>
+              {!taskForm.photoEnabled && (
+                <div className="space-y-2">
+                  <Label>Код ответа *</Label>
+                  <Input required value={taskForm.correctAnswer} onChange={(e) => setTaskForm({ ...taskForm, correctAnswer: e.target.value })} />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>Подсказка</Label>
                 <Input value={taskForm.hintText} onChange={(e) => setTaskForm({ ...taskForm, hintText: e.target.value })} />

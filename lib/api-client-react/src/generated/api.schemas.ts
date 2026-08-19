@@ -35,7 +35,7 @@ export interface Task {
 export interface TaskInput {
   title: string;
   location?: string;
-  correctAnswer: string;
+  correctAnswer?: string;
   hintText?: string;
   latitude?: string;
   longitude?: string;
