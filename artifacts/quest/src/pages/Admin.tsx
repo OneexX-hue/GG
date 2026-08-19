@@ -55,7 +55,6 @@ type PhotoSubmission = {
   id: number;
   taskId: number;
   clientId: string;
-  photoDataUrl: string;
   status: "pending" | "approved" | "rejected";
   createdAt: number;
   reviewedAt: number | null;
@@ -182,6 +181,26 @@ function QualityTaskRow({ task, allCodes }: { task: Task; allCodes: QualityCode[
   );
 }
 
+// Player photos require admin auth, so a plain <img src> can't fetch them (browsers don't
+// attach custom headers to image requests). Fetches once per URL via react-query's cache
+// and hands the browser an object URL instead — repeat renders (e.g. polling refresh of the
+// surrounding list) never re-download the same photo.
+function AuthedImage({ src, password, alt, className }: { src: string; password: string; alt: string; className?: string }) {
+  const { data: objectUrl } = useQuery({
+    queryKey: ["authed-image", src],
+    queryFn: async () => {
+      const res = await fetch(src, { headers: { Authorization: `Bearer ${password}` } });
+      if (!res.ok) throw new Error("Не удалось загрузить фото");
+      return URL.createObjectURL(await res.blob());
+    },
+    staleTime: Infinity,
+  });
+  if (!objectUrl) {
+    return <div className={cn(className, "flex items-center justify-center bg-muted")}><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
+  }
+  return <img src={objectUrl} alt={alt} className={className} />;
+}
+
 export default function Admin() {
   const [password, setPassword] = useState(() => localStorage.getItem(ADMIN_STORAGE_KEY) || "");
   const [isLogged, setIsLogged] = useState(() => Boolean(localStorage.getItem(ADMIN_STORAGE_KEY)));
@@ -189,6 +208,7 @@ export default function Admin() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [durationInput, setDurationInput] = useState("60");
   const queryClient = useQueryClient();
+  const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
   // Restore the auth header on mount — setAuthTokenGetter lives in module memory
   // and is reset on every page load, even though isLogged/password survive via localStorage.
@@ -300,7 +320,21 @@ export default function Admin() {
       setTaskForm({ title: task.title, location: task.location, correctAnswer: task.correctAnswer,
         hintText: task.hintText, description: task.description, points: task.points,
         qualityEnabled: task.qualityEnabled, photoEnabled: task.photoEnabled,
-        clueImageDataUrl: task.clueImageDataUrl });
+        clueImageDataUrl: "" });
+      // The list response never carries the actual clue image (see GET /tasks) — pull it in
+      // just for this edit session, so saving without touching the image doesn't erase it.
+      if (task.hasClueImage) {
+        fetch(`${BASE}/api/tasks/${task.id}/clue-image`)
+          .then((res) => (res.ok ? res.blob() : Promise.reject()))
+          .then((blob) => new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(blob);
+          }))
+          .then((dataUrl) => setTaskForm((prev) => ({ ...prev, clueImageDataUrl: dataUrl })))
+          .catch(() => toast.error("Не удалось загрузить текущую фото-загадку"));
+      }
     } else {
       setEditingTask(null);
       setTaskForm({ title: "", location: "", correctAnswer: "", hintText: "", description: "", points: 10, qualityEnabled: false, photoEnabled: false, clueImageDataUrl: "" });
@@ -598,7 +632,7 @@ export default function Admin() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {pendingPhotos.map((p) => (
                   <div key={p.id} className="rounded-xl border border-border overflow-hidden bg-background flex flex-col">
-                    <img src={p.photoDataUrl} alt={p.taskTitle} className="w-full h-48 object-cover" />
+                    <AuthedImage src={`${BASE}/api/photo-submissions/${p.id}/photo`} password={password} alt={p.taskTitle} className="w-full h-48 object-cover" />
                     <div className="p-3 space-y-2 flex-1 flex flex-col">
                       <div>
                         <p className="font-semibold text-sm leading-tight">{p.taskTitle}</p>
@@ -646,7 +680,7 @@ export default function Admin() {
                   <button key={p.id} onClick={() => setGalleryPhoto(p)}
                     className="rounded-xl border border-border overflow-hidden bg-background text-left hover:ring-2 hover:ring-primary/40 transition-all">
                     <div className="relative">
-                      <img src={p.photoDataUrl} alt={p.taskTitle} className="w-full h-32 object-cover" />
+                      <AuthedImage src={`${BASE}/api/photo-submissions/${p.id}/photo`} password={password} alt={p.taskTitle} className="w-full h-32 object-cover" />
                       <Badge className={cn("absolute top-1.5 right-1.5 text-xs",
                         p.status === "approved" ? "bg-emerald-500 text-white" :
                         p.status === "rejected" ? "bg-rose-500 text-white" :
@@ -673,7 +707,7 @@ export default function Admin() {
                 <DialogHeader>
                   <DialogTitle>{galleryPhoto.taskTitle}</DialogTitle>
                 </DialogHeader>
-                <img src={galleryPhoto.photoDataUrl} alt={galleryPhoto.taskTitle} className="w-full rounded-lg" />
+                <AuthedImage src={`${BASE}/api/photo-submissions/${galleryPhoto.id}/photo`} password={password} alt={galleryPhoto.taskTitle} className="w-full rounded-lg" />
                 <div className="flex items-center justify-between text-sm">
                   <div>
                     <p className="font-bold text-primary">{galleryPhoto.playerTeam || galleryPhoto.playerName}</p>
@@ -867,8 +901,8 @@ export default function Admin() {
                         : <span className="text-muted-foreground text-xs">—</span>}
                     </TableCell>
                     <TableCell className="text-center">
-                      {task.clueImageDataUrl
-                        ? <img src={task.clueImageDataUrl} alt="" className="w-10 h-10 rounded object-cover inline-block" />
+                      {task.hasClueImage
+                        ? <img src={`${BASE}/api/tasks/${task.id}/clue-image`} alt="" className="w-10 h-10 rounded object-cover inline-block" loading="lazy" />
                         : <span className="text-muted-foreground text-xs">—</span>}
                     </TableCell>
                     <TableCell className="text-right">

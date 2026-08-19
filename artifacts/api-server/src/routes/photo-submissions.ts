@@ -57,8 +57,10 @@ router.post("/photo-submissions", (req, res) => {
   res.json(rowToPhotoSubmission(row));
 });
 
-// GET /photo-submissions — admin sees every submission (with photo, for moderation);
-// a player passing ?clientId= sees only their own, without the photo bytes.
+// GET /photo-submissions — metadata only, never the photo bytes: this list is polled
+// every few seconds and the photo history grows unbounded over a game, so embedding
+// base64 photos here would re-transfer megabytes on every poll. Actual bytes come from
+// GET /photo-submissions/:id/photo, fetched once per photo and cached by the client.
 router.get("/photo-submissions", (req, res) => {
   if (isAdminRequest(req)) {
     const rows = sqlite.prepare(
@@ -68,12 +70,15 @@ router.get("/photo-submissions", (req, res) => {
        JOIN players p ON p.client_id = ps.client_id
        ORDER BY (ps.status = 'pending') DESC, ps.created_at DESC`
     ).all() as Record<string, unknown>[];
-    res.json(rows.map((row) => ({
-      ...rowToPhotoSubmission(row),
-      taskTitle: row.task_title as string,
-      playerName: row.player_name as string,
-      playerTeam: row.player_team as string,
-    })));
+    res.json(rows.map((row) => {
+      const { photoDataUrl: _omit, ...rest } = rowToPhotoSubmission(row);
+      return {
+        ...rest,
+        taskTitle: row.task_title as string,
+        playerName: row.player_name as string,
+        playerTeam: row.player_team as string,
+      };
+    }));
     return;
   }
 
@@ -87,6 +92,19 @@ router.get("/photo-submissions", (req, res) => {
     const { photoDataUrl: _omit, ...rest } = rowToPhotoSubmission(row);
     return rest;
   }));
+});
+
+// GET /photo-submissions/:id/photo — admin-only, serves the raw photo bytes.
+router.get("/photo-submissions/:id/photo", requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const row = sqlite.prepare("SELECT photo_data FROM photo_submissions WHERE id = ?").get(id) as
+    | { photo_data?: string }
+    | undefined;
+  const match = /^data:([^;]+);base64,(.+)$/.exec(row?.photo_data ?? "");
+  if (!match) { res.status(404).end(); return; }
+  res.setHeader("Content-Type", match[1]);
+  res.setHeader("Cache-Control", "private, max-age=3600");
+  res.send(Buffer.from(match[2], "base64"));
 });
 
 // POST /photo-submissions/:id/review — admin approves or rejects a pending photo.

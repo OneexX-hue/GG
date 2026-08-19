@@ -456,9 +456,9 @@ export default function Game() {
                 </CardHeader>
 
                 <CardContent className="px-4 pb-4 space-y-3">
-                  {task.clueImageDataUrl && (
+                  {task.hasClueImage && (
                     <div className="rounded-lg overflow-hidden border border-border bg-muted/30">
-                      <img src={task.clueImageDataUrl} alt="Фото-загадка" className="w-full max-h-72 object-contain" />
+                      <img src={`${BASE}/api/tasks/${task.id}/clue-image`} alt="Фото-загадка" className="w-full max-h-72 object-contain" loading="lazy" />
                     </div>
                   )}
 

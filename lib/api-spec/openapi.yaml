@@ -347,8 +347,10 @@ components:
           type: boolean
         clueImageDataUrl:
           type: string
-          description: Clue image the admin attaches when creating the task, shown to every player (e.g. a cropped photo fragment they must identify the location from).
-      required: [id, title, location, correctAnswer, hintText, latitude, longitude, description, points, qualityEnabled, photoEnabled, clueImageDataUrl]
+          description: Always "" on GET /tasks — fetch the actual image from GET /tasks/{id}/clue-image instead.
+        hasClueImage:
+          type: boolean
+      required: [id, title, location, correctAnswer, hintText, latitude, longitude, description, points, qualityEnabled, photoEnabled, clueImageDataUrl, hasClueImage]
 
     TaskInput:
       type: object

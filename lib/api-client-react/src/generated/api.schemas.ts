@@ -29,7 +29,9 @@ export interface Task {
   points: number;
   qualityEnabled: boolean;
   photoEnabled: boolean;
+  /** Always "" on GET /tasks — fetch the actual image from GET /tasks/{id}/clue-image. */
   clueImageDataUrl: string;
+  hasClueImage: boolean;
 }
 
 export interface TaskInput {

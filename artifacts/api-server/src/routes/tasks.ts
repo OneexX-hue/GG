@@ -210,10 +210,30 @@ router.get("/tasks", (req, res) => {
     }
   }
   const rows = sqlite.prepare("SELECT * FROM tasks ORDER BY id").all() as Record<string, unknown>[];
-  const tasks = rows.map(rowToTask);
+  // Clue images are fetched separately (GET /tasks/:id/clue-image, browser-cached) instead
+  // of being embedded here — this list is polled every few seconds by every player, and
+  // shipping megabytes of base64 images on each poll is what buckles the server under load.
+  const tasks = rows.map((row) => {
+    const t = rowToTask(row);
+    return { ...t, hasClueImage: t.clueImageDataUrl !== "", clueImageDataUrl: "" };
+  });
   // Never leak the answer codes to players — only an authenticated admin sees them.
   const admin = isAdminRequest(req);
   res.json(admin ? tasks : tasks.map((t) => ({ ...t, correctAnswer: "" })));
+});
+
+// GET /tasks/:id/clue-image — serves the raw clue image bytes, browser-cacheable.
+// Public: clue images are meant to be seen by players, same as the task text.
+router.get("/tasks/:id/clue-image", (req, res) => {
+  const id = Number(req.params.id);
+  const row = sqlite.prepare("SELECT clue_image_data FROM tasks WHERE id = ?").get(id) as
+    | { clue_image_data?: string }
+    | undefined;
+  const match = /^data:([^;]+);base64,(.+)$/.exec(row?.clue_image_data ?? "");
+  if (!match) { res.status(404).end(); return; }
+  res.setHeader("Content-Type", match[1]);
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  res.send(Buffer.from(match[2], "base64"));
 });
 
 // POST /tasks/:id/submit — player submits an answer code; verified server-side.
