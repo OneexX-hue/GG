@@ -28,11 +28,11 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
-import { cn } from "@/lib/utils";
+import { cn, compressImage } from "@/lib/utils";
 import {
   Play, Pause, Square, Plus, Trash2, Edit, Shield, Copy,
   RefreshCw, Star, Award, ChevronDown, ChevronRight, Users, AlertTriangle, Trophy, Clock,
-  Camera, Check, X, Loader2, KeyRound, History,
+  Camera, Check, X, Loader2, KeyRound, History, Image as ImageIcon,
 } from "lucide-react";
 
 function formatTime(sec: number) {
@@ -290,20 +290,35 @@ export default function Admin() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [taskForm, setTaskForm] = useState({
     title: "", location: "", correctAnswer: "", hintText: "",
-    description: "", points: 10, qualityEnabled: false, photoEnabled: false,
+    description: "", points: 10, qualityEnabled: false, photoEnabled: false, clueImageDataUrl: "",
   });
+  const [clueImageUploading, setClueImageUploading] = useState(false);
 
   const handleOpenTaskDialog = (task?: Task) => {
     if (task) {
       setEditingTask(task);
       setTaskForm({ title: task.title, location: task.location, correctAnswer: task.correctAnswer,
         hintText: task.hintText, description: task.description, points: task.points,
-        qualityEnabled: task.qualityEnabled, photoEnabled: task.photoEnabled });
+        qualityEnabled: task.qualityEnabled, photoEnabled: task.photoEnabled,
+        clueImageDataUrl: task.clueImageDataUrl });
     } else {
       setEditingTask(null);
-      setTaskForm({ title: "", location: "", correctAnswer: "", hintText: "", description: "", points: 10, qualityEnabled: false, photoEnabled: false });
+      setTaskForm({ title: "", location: "", correctAnswer: "", hintText: "", description: "", points: 10, qualityEnabled: false, photoEnabled: false, clueImageDataUrl: "" });
     }
     setIsTaskDialogOpen(true);
+  };
+
+  const handleClueImageSelected = async (file: File | undefined) => {
+    if (!file) return;
+    setClueImageUploading(true);
+    try {
+      const dataUrl = await compressImage(file);
+      setTaskForm((prev) => ({ ...prev, clueImageDataUrl: dataUrl }));
+    } catch (err: any) {
+      toast.error(err.message || "Не удалось загрузить изображение");
+    } finally {
+      setClueImageUploading(false);
+    }
   };
 
   const handleSaveTask = (e: React.FormEvent) => {
@@ -830,6 +845,7 @@ export default function Admin() {
                   <TableHead className="text-center">Баллы</TableHead>
                   <TableHead className="text-center">Оценка качества</TableHead>
                   <TableHead className="text-center">Фото</TableHead>
+                  <TableHead className="text-center">Загадка</TableHead>
                   <TableHead className="text-right">Действия</TableHead>
                 </TableRow>
               </TableHeader>
@@ -850,6 +866,11 @@ export default function Admin() {
                         ? <Badge className="bg-sky-500 text-white text-xs"><Camera className="w-3 h-3 mr-1" />Вкл</Badge>
                         : <span className="text-muted-foreground text-xs">—</span>}
                     </TableCell>
+                    <TableCell className="text-center">
+                      {task.clueImageDataUrl
+                        ? <img src={task.clueImageDataUrl} alt="" className="w-10 h-10 rounded object-cover inline-block" />
+                        : <span className="text-muted-foreground text-xs">—</span>}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenTaskDialog(task)}>
@@ -865,7 +886,7 @@ export default function Admin() {
                 ))}
                 {(tasks ?? []).length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">Нет заданий</TableCell>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">Нет заданий</TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -927,6 +948,34 @@ export default function Admin() {
                 <Label>Баллы за выполнение</Label>
                 <Input type="number" min="0" value={taskForm.points}
                   onChange={(e) => setTaskForm({ ...taskForm, points: Number(e.target.value) })} />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <ImageIcon className="w-3.5 h-3.5" /> Фото-загадка (опционально)
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Покажется игрокам прямо в задании — например, кусок фото места, которое нужно узнать и найти.
+                </p>
+                {taskForm.clueImageDataUrl ? (
+                  <div className="relative rounded-lg overflow-hidden border border-border">
+                    <img src={taskForm.clueImageDataUrl} alt="Фото-загадка" className="w-full h-40 object-cover" />
+                    <Button type="button" size="icon" variant="destructive" className="absolute top-2 right-2 h-8 w-8"
+                      onClick={() => setTaskForm((prev) => ({ ...prev, clueImageDataUrl: "" }))}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <label className={cn(
+                    "h-24 flex flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border text-sm text-muted-foreground cursor-pointer transition-colors",
+                    clueImageUploading ? "opacity-60 pointer-events-none" : "hover:bg-muted/40"
+                  )}>
+                    {clueImageUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
+                    {clueImageUploading ? "Загрузка..." : "Прикрепить фото"}
+                    <input type="file" accept="image/*" className="hidden" disabled={clueImageUploading}
+                      onChange={(e) => { handleClueImageSelected(e.target.files?.[0]); e.target.value = ""; }} />
+                  </label>
+                )}
               </div>
 
               <Separator />

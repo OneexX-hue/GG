@@ -29,6 +29,7 @@ export interface Task {
   points: number;
   qualityEnabled: boolean;
   photoEnabled: boolean;
+  clueImageDataUrl: string;
 }
 
 export interface TaskInput {
@@ -42,6 +43,7 @@ export interface TaskInput {
   points?: number;
   qualityEnabled?: boolean;
   photoEnabled?: boolean;
+  clueImageDataUrl?: string;
 }
 
 export interface PlayerQualityScores {[key: string]: number}

@@ -20,7 +20,8 @@ sqlite.exec(`
     description TEXT NOT NULL DEFAULT '',
     points INTEGER NOT NULL DEFAULT 10,
     quality_enabled INTEGER NOT NULL DEFAULT 0,
-    photo_enabled INTEGER NOT NULL DEFAULT 0
+    photo_enabled INTEGER NOT NULL DEFAULT 0,
+    clue_image_data TEXT NOT NULL DEFAULT ''
   );
   CREATE TABLE IF NOT EXISTS players (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -77,6 +78,7 @@ const migrations = [
   `ALTER TABLE quality_codes ADD COLUMN is_permanent INTEGER NOT NULL DEFAULT 0`,
   `ALTER TABLE game_state ADD COLUMN duration_minutes REAL NOT NULL DEFAULT 0`,
   `ALTER TABLE players ADD COLUMN pin_hash TEXT NOT NULL DEFAULT ''`,
+  `ALTER TABLE tasks ADD COLUMN clue_image_data TEXT NOT NULL DEFAULT ''`,
 ];
 for (const sql of migrations) {
   try { sqlite.exec(sql); } catch { /* column already exists */ }
@@ -94,6 +96,8 @@ export type Task = {
   points: number;
   qualityEnabled: boolean;
   photoEnabled: boolean;
+  /** Clue image the admin attaches when creating the task — shown to players, e.g. a cropped puzzle-piece photo they must identify the location from. */
+  clueImageDataUrl: string;
 };
 
 export type PhotoSubmissionStatus = "pending" | "approved" | "rejected";
@@ -162,6 +166,7 @@ export function rowToTask(row: Record<string, unknown>): Task {
     points: row.points as number,
     qualityEnabled: Boolean(row.quality_enabled),
     photoEnabled: Boolean(row.photo_enabled),
+    clueImageDataUrl: (row.clue_image_data as string) || "",
   };
 }
 

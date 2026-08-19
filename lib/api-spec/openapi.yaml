@@ -345,7 +345,10 @@ components:
           type: boolean
         photoEnabled:
           type: boolean
-      required: [id, title, location, correctAnswer, hintText, latitude, longitude, description, points, qualityEnabled, photoEnabled]
+        clueImageDataUrl:
+          type: string
+          description: Clue image the admin attaches when creating the task, shown to every player (e.g. a cropped photo fragment they must identify the location from).
+      required: [id, title, location, correctAnswer, hintText, latitude, longitude, description, points, qualityEnabled, photoEnabled, clueImageDataUrl]
 
     TaskInput:
       type: object
@@ -370,6 +373,8 @@ components:
           type: boolean
         photoEnabled:
           type: boolean
+        clueImageDataUrl:
+          type: string
       required: [title, correctAnswer]
 
     PlayerQualityScores:

@@ -11,6 +11,8 @@ const taskSubmitSchema = z.object({
   answer: z.string(),
 });
 
+const MAX_CLUE_IMAGE_LENGTH = 8_000_000; // ~6MB binary as base64 data URL
+
 const taskSchema = z.object({
   title: z.string(),
   location: z.string().optional().default(""),
@@ -22,6 +24,12 @@ const taskSchema = z.object({
   description: z.string().optional().default(""),
   qualityEnabled: z.boolean().optional().default(false),
   photoEnabled: z.boolean().optional().default(false),
+  // Clue image the admin attaches — shown to every player on this task's card
+  // (e.g. a cropped photo fragment they must recognize the location from).
+  clueImageDataUrl: z.string().max(MAX_CLUE_IMAGE_LENGTH).refine(
+    (v) => v === "" || v.startsWith("data:image/"),
+    "Некорректное изображение"
+  ).optional().default(""),
 });
 
 const DEFAULT_TASKS = [
@@ -236,8 +244,8 @@ router.post("/tasks", requireAdmin, (req, res) => {
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const d = parsed.data;
   const result = sqlite.prepare(
-    "INSERT INTO tasks (title, location, correct_answer, hint_text, latitude, longitude, description, points, quality_enabled, photo_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-  ).run(d.title, d.location, d.correctAnswer, d.hintText, d.latitude, d.longitude, d.description, d.points, d.qualityEnabled ? 1 : 0, d.photoEnabled ? 1 : 0) as { lastInsertRowid: number };
+    "INSERT INTO tasks (title, location, correct_answer, hint_text, latitude, longitude, description, points, quality_enabled, photo_enabled, clue_image_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  ).run(d.title, d.location, d.correctAnswer, d.hintText, d.latitude, d.longitude, d.description, d.points, d.qualityEnabled ? 1 : 0, d.photoEnabled ? 1 : 0, d.clueImageDataUrl) as { lastInsertRowid: number };
   const taskId = result.lastInsertRowid;
   if (d.qualityEnabled) ensurePermanentCodes(taskId);
   const row = sqlite.prepare("SELECT * FROM tasks WHERE id = ?").get(taskId) as Record<string, unknown>;
@@ -250,8 +258,8 @@ router.put("/tasks/:id", requireAdmin, (req, res) => {
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const d = parsed.data;
   sqlite.prepare(
-    "UPDATE tasks SET title=?, location=?, correct_answer=?, hint_text=?, latitude=?, longitude=?, description=?, points=?, quality_enabled=?, photo_enabled=? WHERE id=?"
-  ).run(d.title, d.location, d.correctAnswer, d.hintText, d.latitude, d.longitude, d.description, d.points, d.qualityEnabled ? 1 : 0, d.photoEnabled ? 1 : 0, id);
+    "UPDATE tasks SET title=?, location=?, correct_answer=?, hint_text=?, latitude=?, longitude=?, description=?, points=?, quality_enabled=?, photo_enabled=?, clue_image_data=? WHERE id=?"
+  ).run(d.title, d.location, d.correctAnswer, d.hintText, d.latitude, d.longitude, d.description, d.points, d.qualityEnabled ? 1 : 0, d.photoEnabled ? 1 : 0, d.clueImageDataUrl, id);
   if (d.qualityEnabled) {
     ensurePermanentCodes(id);
   } else {

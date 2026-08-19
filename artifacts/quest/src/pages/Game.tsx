@@ -9,7 +9,7 @@ import {
   getGetTasksQueryKey,
   getGetGameStateQueryKey,
 } from "@workspace/api-client-react";
-import { getClientId, cn } from "@/lib/utils";
+import { getClientId, cn, compressImage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -208,34 +208,6 @@ type MyPhotoSubmission = {
   taskId: number;
   status: "pending" | "approved" | "rejected";
 };
-
-/** Downscales + JPEG-compresses a photo client-side before upload, so a phone camera shot stays a reasonable size. */
-function compressImage(file: File, maxDim = 1280, quality = 0.7): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Не удалось прочитать файл"));
-    reader.onload = () => {
-      const img = new Image();
-      img.onerror = () => reject(new Error("Не удалось прочитать изображение"));
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > maxDim || height > maxDim) {
-          if (width > height) { height = Math.round((height * maxDim) / width); width = maxDim; }
-          else { width = Math.round((width * maxDim) / height); height = maxDim; }
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) { reject(new Error("Canvas недоступен")); return; }
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", quality));
-      };
-      img.src = reader.result as string;
-    };
-    reader.readAsDataURL(file);
-  });
-}
 
 async function fetchMyPhotoSubmissions(clientId: string): Promise<MyPhotoSubmission[]> {
   const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
@@ -484,6 +456,12 @@ export default function Game() {
                 </CardHeader>
 
                 <CardContent className="px-4 pb-4 space-y-3">
+                  {task.clueImageDataUrl && (
+                    <div className="rounded-lg overflow-hidden border border-border bg-muted/30">
+                      <img src={task.clueImageDataUrl} alt="Фото-загадка" className="w-full max-h-72 object-contain" />
+                    </div>
+                  )}
+
                   {task.description && (
                     <p className="text-sm leading-relaxed text-foreground/80">{task.description}</p>
                   )}
