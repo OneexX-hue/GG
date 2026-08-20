@@ -26,6 +26,10 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      # SSL-сертификат домена (fullchain.pem + privkey.pem), кладётся на сервере вручную
+      - ./certs:/etc/nginx/certs:ro
     depends_on:
       api:
         condition: service_healthy
