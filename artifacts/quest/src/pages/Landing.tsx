@@ -28,11 +28,11 @@ export default function Landing() {
         loop
         muted
         playsInline
-        className="absolute inset-0 -z-10 h-full w-full object-cover opacity-70"
+        className="absolute inset-0 -z-10 h-full w-full object-cover opacity-45"
       >
         <source src={`${BASE}/media/burnout.mp4`} type="video/mp4" />
       </video>
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/80 via-black/70 to-black/90" />
 
       <button
         onClick={toggleSound}
