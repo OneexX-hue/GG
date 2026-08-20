@@ -300,7 +300,7 @@ export default function Game() {
   const [uploadingTaskId, setUploadingTaskId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (playerError) setLocation("/");
+    if (playerError) setLocation("/quest");
   }, [playerError, setLocation]);
 
   const handlePhotoSelected = async (taskId: number, file: File | undefined) => {

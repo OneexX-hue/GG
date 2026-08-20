@@ -48,14 +48,14 @@ export default function Registration() {
   const createPlayer = useCreatePlayer();
 
   useEffect(() => {
-    if (player) setLocation("/game");
+    if (player) setLocation("/quest/game");
   }, [player, setLocation]);
 
   const onRegister = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || pin.length !== 4) return;
     createPlayer.mutate({ data: { clientId, name: name.trim(), team: team.trim(), pin } }, {
-      onSuccess: () => setLocation("/game"),
+      onSuccess: () => setLocation("/quest/game"),
       onError: () => toast.error("Ошибка при регистрации. Попробуйте ещё раз."),
     });
   };
@@ -67,7 +67,7 @@ export default function Registration() {
     try {
       await recoverSession(recoverName.trim(), recoverTeam.trim(), recoverPin, clientId);
       toast.success("Сессия восстановлена!");
-      setLocation("/game");
+      setLocation("/quest/game");
     } catch (err: any) {
       toast.error(err.message || "Не удалось найти игрока");
     } finally {
