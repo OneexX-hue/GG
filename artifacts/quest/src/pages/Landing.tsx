@@ -28,7 +28,7 @@ export default function Landing() {
         loop
         muted
         playsInline
-        className="absolute inset-0 -z-10 h-full w-full object-cover opacity-70"
+        className="absolute inset-0 -z-10 h-full w-full object-cover object-center opacity-[0.85]"
       >
         <source src={`${BASE}/media/burnout.mp4`} type="video/mp4" />
       </video>
