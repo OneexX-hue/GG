@@ -2,6 +2,9 @@ FROM node:24-bookworm-slim AS builder
 
 WORKDIR /app
 
+# npmjs.org is flaky/rate-limited from some datacenters — mirror is a drop-in replacement.
+ENV NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
+
 RUN npm install -g pnpm@10
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json tsconfig.json ./
