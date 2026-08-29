@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, Volume2, VolumeX } from "lucide-react";
@@ -10,6 +10,14 @@ const logoWhite = { filter: "brightness(0) invert(1)" } as const;
 export default function Landing() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
+
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = "Официальный Сайт Смотра Сургут";
+    return () => {
+      document.title = previousTitle;
+    };
+  }, []);
 
   const toggleSound = () => {
     const video = videoRef.current;
