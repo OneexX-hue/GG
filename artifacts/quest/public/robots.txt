@@ -1,2 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /quest/admin
+
+Sitemap: https://smotrasurgut.ru/sitemap.xml
