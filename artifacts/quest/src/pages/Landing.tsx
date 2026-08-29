@@ -36,7 +36,7 @@ export default function Landing() {
 
       <button
         onClick={toggleSound}
-        className="absolute bottom-6 right-6 z-10 flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-sm transition-all hover:border-white hover:bg-black/60"
+        className="absolute bottom-6 right-6 z-20 flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-sm transition-all hover:border-white hover:bg-black/60"
         aria-label={muted ? "Включить звук" : "Выключить звук"}
       >
         {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
