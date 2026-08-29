@@ -28,11 +28,11 @@ export default function Landing() {
         loop
         muted
         playsInline
-        className="absolute inset-0 -z-10 h-full w-full object-cover object-center [filter:brightness(1.55)_contrast(1.1)_saturate(1.15)]"
+        className="absolute inset-0 z-0 h-full w-full object-cover object-center [filter:brightness(1.55)_contrast(1.1)_saturate(1.15)]"
       >
         <source src={`${BASE}/media/burnout.mp4`} type="video/mp4" />
       </video>
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/35 via-black/10 to-black/50" />
+      <div className="absolute inset-0 z-0 bg-gradient-to-b from-black/35 via-black/10 to-black/50" />
 
       <button
         onClick={toggleSound}
@@ -43,7 +43,7 @@ export default function Landing() {
       </button>
 
       {/* ── Контент ── */}
-      <section className="relative flex min-h-[100dvh] flex-col items-center justify-center px-4 py-20">
+      <section className="relative z-10 flex min-h-[100dvh] flex-col items-center justify-center px-4 py-20">
         <img
           src={`${BASE}/logo.svg`}
           alt="Surgut Smotra"
