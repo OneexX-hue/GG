@@ -26,8 +26,11 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      # SSL-сертификат домена (fullchain.pem + privkey.pem), кладётся на сервере вручную
+      # SSL-сертификаты (fullchain.pem/privkey.pem для smotrasurgut.ru,
+      # bot-fullchain.pem/bot-privkey.pem для bot.smotrasurgut.ru), кладутся на сервере вручную
       - ./certs:/etc/nginx/certs:ro
+      # Webroot для ACME-проверки Let's Encrypt (certbot certonly --webroot -w ./certbot-webroot)
+      - ./certbot-webroot:/var/www/certbot:ro
     depends_on:
       api:
         condition: service_healthy
